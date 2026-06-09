@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>登录</title>
+  <link rel="stylesheet" href="1.css">
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+  <script src="js.js"></script>
+</head>
+
+<body>
+  <div class="login-container">
+    <h3 class="login">HELLO,</h3>
+    <h2><span class="h2-part1">欢迎登录</span><span class="h2-part2">学生管理系统</span></h2>
+    <form id="loginForm">
+      <div class="input-box">
+        <label>学号</label>
+        <input type="text" placeholder=" " required name="userID">
+      </div>
+      <div class="input-box">
+        <input type="password" placeholder=" " required name="password">
+        <label>密码</label>
+      </div>
+      <button class="btn" type="submit">登录</button>
+      <button type="button" class="btn-1" onclick="register()">注册</button>
+
+      <div class="agree">
+        <input type="checkbox" id="agree">
+        <label for="agree">我已阅读并同意 <a href="#">用户协议</a> 和 <a href="#">隐私政策</a></label>
+      </div>
+
+    </form>
+  </div>
+
+  <script>
+    function register() {
+      window.location.href = "register.html";
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const agreeCheckbox = document.getElementById('agree');
+      if (!agreeCheckbox.checked) {
+        showTempTip('请阅读并同意用户协议和隐私政策', 'red');
+        return;
+      }
+
+      e.preventDefault();
+      const form = document.getElementById('loginForm');
+      const formData = new FormData(form);
+      const password = formData.get('password');
+      // const hashPassword = CryptoJS.SHA256(password).toString();
+      // formData.set('password', hashPassword);
+      const jsonData = Object.fromEntries(formData.entries())
+      const response = await fetch('http://localhost:8080/test5_war_exploded/student/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type':
+            'application/json'
+        },
+        body: JSON.stringify(jsonData)
+      });
+      const data = await response.json();
+      // sessionStorage.setItem('token', data.token);
+      console.log(data);
+      if (data.code === 200) {
+        showTempTip(data.message, "green");
+            localStorage.setItem(
+        "token",
+        data.data.token
+    );
+
+    localStorage.setItem(
+        "role",
+        data.data.role
+    );
+        setTimeout(() => {
+          window.location.href = "homepage.html";
+        }, 500);
+      }
+      else {
+        showTempTip(data.message, "red");
+      }
+    });
+
+  </script>
+</body>
+
+</html>

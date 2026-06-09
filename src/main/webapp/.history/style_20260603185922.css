@@ -1,0 +1,235 @@
+/* 全局初始化 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "PingFang SC", "微软雅黑", sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- 主卡片 --- */
+.login-container,
+.register-container,
+.forgot-container {
+  width: 380px;
+  background: linear-gradient(180deg, #cfe3ff 0%, #ffffff 100%);
+  border-radius: 18px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+  padding: 40px 36px;
+}
+
+/* 标题 */
+h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.h2-part1,
+.login {
+  font-size: 25px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 7px;
+}
+
+.h2-part2 {
+  font-size: 25px;
+  font-weight: 700;
+  color: #227ece;
+  margin-bottom: 30px;
+}
+
+h2 {
+  margin-bottom: 30px;
+}
+
+/* 输入框容器 */
+.input-box {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-box label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 14px;
+  pointer-events: none;
+  transition: 0.2s;
+}
+
+.input-box input {
+  width: 100%;
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid #d5deeb;
+  background: #f8fafc;
+  padding: 0 14px 0 70px;
+  /* 留出标签空间 */
+  font-size: 14px;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.input-box input:focus {
+  border-color: #4e93ff;
+  box-shadow: 0 0 4px rgba(78, 147, 255, 0.4);
+}
+
+.input-box input:focus+label,
+.input-box input:not(:placeholder-shown)+label {
+  color: #4e93ff;
+}
+
+/* 获取验证码按钮 */
+.get-code {
+  position: absolute;
+  right: 10px;
+  top: 7px;
+  height: 30px;
+  background: #4e93ff;
+  color: #fff;
+  border-radius: 15px;
+  padding: 0 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+  border: none;
+}
+
+.get-code:hover {
+  background: #abc5e8;
+}
+
+/* 按钮 */
+.btn {
+  border-radius: 22px;
+  border: 2px solid #227ece;
+  width: 100%;
+  height: 48px;
+  border-radius: 24px;
+  background: #227ece;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 5px;
+}
+
+.btn:hover {
+  background-color: #abc5e8;
+}
+
+.btn-1 {
+  border-radius: 22px;
+  border: 2px solid #5394cc;
+  width: 100%;
+  height: 48px;
+  border-radius: 24px;
+  background: white;
+  color: #227ece;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 5px;
+}
+
+.btn-1:hover {
+  background-color: #a1bdd6;
+}
+
+/* 勾选条款 */
+.agree {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  font-size: 13px;
+  color: #666;
+  margin-top: 10px;
+}
+
+.agree input[type="checkbox"] {
+  width: 13px;
+  height: 13px;
+  accent-color: #4e93ff;
+}
+
+.agree a {
+  color: #4e93ff;
+  text-decoration: none;
+}
+
+.agree a:hover {
+  text-decoration: underline;
+}
+
+/* 页面底部跳转 */
+.link {
+  text-align: center;
+  font-size: 13px;
+  margin-top: 18px;
+  color: #777;
+}
+
+.link a {
+  color: #4e93ff;
+  text-decoration: none;
+}
+
+.link a:hover {
+  text-decoration: underline;
+}
+
+/* 角色选择
+.role-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0 25px;
+}
+
+.role {
+  padding: 8px 14px;
+  background: #f3f6fb;
+  border-radius: 6px;
+  border: 1px solid #d5deeb;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.role:hover {
+  background: #e9f2ff;
+}
+
+.role.active {
+  background: #2b82ff;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(43, 130, 255, 0.3);
+} */
+
+.return {
+  text-decoration: none;
+  font-size: 30px;
+  color: #333;
+}
+
+.return:hover {
+  color: #a1b1c4;
+}
