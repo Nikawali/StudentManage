@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理员工作台</title>
+<link rel="stylesheet" href="home.css">
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+    }
+    th, td {
+        border: 1px solid #e5e7eb;
+        padding: 10px;
+        text-align: center;
+    }
+    th {
+        background: #2563eb;
+        color: #fff;
+    }
+    .operate-btn {
+        margin: 0 4px;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>管理员工作台</h1>
+        <button id="logoutBtn" class="btn danger">退出登录</button>
+    </div>
+
+    <div class="card">
+        <h2>管理员信息</h2>
+        <p>管理员ID：<span id="adminId">加载中...</span></p>
+        <p>姓名：<span id="adminName">加载中...</span></p>
+        <p>性别：<span id="gender">加载中...</span></p>
+        <p>手机号：<span id="phone">加载中...</span></p>
+    </div>
+
+    <div class="card">
+        <h2>功能中心</h2>
+        <div class="btn-group">
+            <button id="studentManageBtn" class="btn primary">学生管理</button>
+            <button id="classManageBtn" class="btn primary">班级管理</button>
+            <button id="editAdminBtn" class="btn primary">修改本人信息</button>
+
+        </div>
+    </div>
+
+    <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2>教师管理</h2>
+        <button
+                class="btn primary"
+                onclick="addTeacher()">
+            新增教师
+        </button>
+    </div>
+        <table>
+            <thead>
+            <tr>
+                <th>教师ID</th>
+                <th>姓名</th>
+                <th>性别</th>
+                <th>手机号</th>
+                <th>班级ID</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="teacherTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const BASE_URL="http://localhost:8080/test5_war_exploded/admin"
+
+function authFetch(url, options = {}) {
+    options.headers = {
+        ...(options.headers || {}),
+        token: localStorage.getItem("token")
+    };
+    return fetch(url, options);
+}
+
+window.onload = function () {
+    if (localStorage.getItem("role") !== "admin") {
+        alert("当前页面仅管理员可访问");
+        location.href = "login.html";
+        return;
+    }
+    loadTeacherInfo();
+    loadTeacherList();
+    bindEvent();
+};
+
+function bindEvent() {
+    document.getElementById("studentManageBtn").onclick = function () {
+        location.href = "index.html";
+    };
+
+    document.getElementById("classManageBtn").onclick = function () {
+        location.href = "class.html";
+    };
+
+    document.getElementById("logoutBtn").onclick = function () {
+        localStorage.clear();
+        location.href = "login.html";
+    };
+    document.getElementById("editAdminBtn").onclick = editCurrentAdmin;
+}
+
+async function loadTeacherInfo() {
+    const response = await authFetch(BASE_URL + "?action=findById");
+    const result = await response.json();
+    if (result.code !== 200) {
+        alert(result.message);
+        return;
+    }
+
+    const admin = result.data;
+    document.getElementById("adminId").innerText = admin.adminId;
+    document.getElementById("adminName").innerText = admin.name;
+    document.getElementById("phone").innerText = admin.phone;
+    document.getElementById("gender").innerText = admin.gender;
+}
+
+async function loadTeacherList() {
+    const response = await authFetch(BASE_URL + "?action=findTeachers");
+    const result = await response.json();
+    if (result.code !== 200) {
+        alert(result.message);
+        return;
+    }
+
+    const tbody = document.getElementById("teacherTableBody");
+    tbody.innerHTML = "";
+
+    result.data.forEach(item => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${item.teacherId}</td>
+                <td>${item.name}</td>
+                <td>${item.gender}</td>
+                <td>${item.phone}</td>
+                <td>${item.classId == null ? "未绑定" : item.classId}</td>
+                <td>
+                    <button class="btn primary operate-btn" onclick="editTeacher('${item.teacherId}', '${item.name}', '${item.gender}', '${item.phone}', '${item.classId == null ? "" : item.classId}')">编辑</button>
+                    <button class="btn danger operate-btn" onclick="deleteTeacher('${item.teacherId}')">删除</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+async function editCurrentAdmin() {
+    const response = await authFetch(BASE_URL + "?action=findById");
+    const result = await response.json();
+    if (result.code !== 200) {
+        alert(result.message);
+        return;
+    }
+    const admin = result.data;
+    editAdmin(admin.name, admin.gender, admin.phone);
+}
+
+async function editAdmin(oldName, oldGender, oldPhone) {
+    const name = prompt("请输入姓名", oldName);
+    if (name === null || name === "") return;
+
+    const gender = prompt("请输入性别", oldGender);
+    if (gender === null || gender === "") return;
+
+    const phone = prompt("请输入手机号", oldPhone);
+    if (phone === null || phone === "") return;
+
+    const params = new URLSearchParams();
+    params.append("action", "update");
+    params.append("name", name);
+    params.append("gender", gender);
+    params.append("phone", phone);
+
+    const response = await authFetch(BASE_URL, {
+        method: "POST",
+        body: params
+    });
+    const result = await response.json();
+    alert(result.message);
+    if (result.code === 200) {
+        loadTeacherInfo();
+    }
+}
+
+async function editTeacher(teacherId, oldName, oldGender, oldPhone, oldClassId) {
+    const name = prompt("请输入姓名", oldName);
+    if (name === null || name === "") return;
+
+    const gender = prompt("请输入性别", oldGender);
+    if (gender === null || gender === "") return;
+
+    const phone = prompt("请输入手机号", oldPhone);
+    if (phone === null || phone === "") return;
+
+    const classId = prompt("请输入班级ID（留空表示不绑定班级）", oldClassId);
+    if (classId === null) return;
+
+    const params = new URLSearchParams();
+    params.append("action", "updateTeacher");
+    params.append("teacherId", teacherId);
+    params.append("name", name);
+    params.append("gender", gender);
+    params.append("phone", phone);
+    params.append("classId", classId);
+
+    const response = await authFetch(BASE_URL, {
+        method: "POST",
+        body: params
+    });
+    const result = await response.json();
+    alert(result.message);
+
+    if (result.code === 200) {
+        loadTeacherList();
+    }
+}
+
+async function deleteTeacher(teacherId) {
+    if (!confirm("确定删除该教师？")) {
+        return;
+    }
+    const params = new URLSearchParams();
+    params.append("action", "deleteTeacher");
+    params.append("teacherId", teacherId);
+    const response = await authFetch(BASE_URL, {
+        method: "POST",
+        body: params
+    });
+    const result = await response.json();
+    alert(result.message);
+    if (result.code === 200) {
+        loadTeacherList();
+    }
+}
+</script>
+</body>
+</html>
