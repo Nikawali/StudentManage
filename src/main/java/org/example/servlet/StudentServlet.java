@@ -3,6 +3,8 @@ package org.example.servlet;
 
 import org.example.dao.ClassInfoDAO;
 import org.example.dao.StudentDAO;
+import org.example.dao.TeacherDAO;
+import org.example.dao.UserDAO;
 import org.example.entity.Student;
 import org.example.exception.BusinessesException;
 import org.example.service.StudentService;
@@ -24,7 +26,9 @@ public class StudentServlet extends HttpServlet {
     private final StudentService studentService =
             new StudentServiceImpl(
                     new StudentDAO(),
-                    new ClassInfoDAO()
+                    new ClassInfoDAO(),
+                    new TeacherDAO(),
+                    new UserDAO()
             );
 
     @Override
@@ -56,10 +60,7 @@ public class StudentServlet extends HttpServlet {
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
-        resp.setHeader("Access-Control-Allow-Origin", "*");           // 允许所有来源（开发阶段）
-        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        resp.setHeader("Access-Control-Max-Age", "3600");
+        setCors(resp);
 
         String action =
                 req.getParameter("action");
@@ -111,10 +112,7 @@ public class StudentServlet extends HttpServlet {
              throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
-        resp.setHeader("Access-Control-Allow-Origin", "*");           // 允许所有来源（开发阶段）
-        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        resp.setHeader("Access-Control-Max-Age", "3600");
+        setCors(resp);
         String action =
                 req.getParameter("action");
 
@@ -470,43 +468,71 @@ public class StudentServlet extends HttpServlet {
     /**
      * 请求参数转Student
      */
-    private Student buildStudent(
-            HttpServletRequest req) {
+    private Student buildStudent(HttpServletRequest req) {
+        Student student = new Student();
 
-        Student student =
-                new Student();
+        // 姓名校验
+        String name = req.getParameter("name");
+        if (name == null || name.trim().isEmpty()) {
+            throw new BusinessesException(400, "姓名不能为空");
+        }
+        student.setName(name.trim());
 
-        student.setName(
-                req.getParameter("name").trim()
-        );
+        // 性别校验
+        String gender = req.getParameter("gender");
+        if (gender == null || gender.trim().isEmpty()) {
+            throw new BusinessesException(400, "性别不能为空");
+        }
+        student.setGender(gender.trim());
 
-        student.setGender(
-                req.getParameter("gender").trim()
-        );
+        // 年龄校验
+        String ageStr = req.getParameter("age");
+        if (ageStr == null || ageStr.trim().isEmpty()) {
+            throw new BusinessesException(400, "年龄不能为空");
+        }
+        try {
+            student.setAge(Integer.parseInt(ageStr.trim()));
+        } catch (NumberFormatException e) {
+            throw new BusinessesException(400, "年龄必须是数字");
+        }
 
-        student.setAge(
-                Integer.parseInt(
-                        req.getParameter("age")
-                )
-        );
+        // 手机号校验
+        String phone = req.getParameter("phone");
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new BusinessesException(400, "手机号不能为空");
+        }
+        student.setPhone(phone.trim());
 
-        student.setPhone(
-                req.getParameter("phone").trim()
-        );
+        String classIdStr = req.getParameter("classId");
+        if (classIdStr == null || classIdStr.trim().isEmpty()) {
+            student.setClassId(null); // 空 → 设为 null，存入数据库 NULL
+        } else {
+            try {
+                student.setClassId(Integer.parseInt(classIdStr.trim()));
+            } catch (NumberFormatException e) {
+                throw new BusinessesException(400, "班级ID必须是数字");
+            }
+        }
 
-        student.setClassId(
-                Integer.parseInt(
-                        req.getParameter("classId")
-                )
-        );
-
-        student.setStudentId(
-                Long.parseLong(
-                        req.getParameter("studentId")
-                )
-        );
+        // 学号校验
+        String studentIdStr = req.getParameter("studentId");
+        if (studentIdStr == null || studentIdStr.trim().isEmpty()) {
+            throw new BusinessesException(400, "学号不能为空");
+        }
+        try {
+            student.setStudentId(Long.parseLong(studentIdStr.trim()));
+        } catch (NumberFormatException e) {
+            throw new BusinessesException(400, "学号必须是数字");
+        }
 
         return student;
+    }
+
+    private void setCors(HttpServletResponse resp) {
+        resp.setHeader("Access-Control-Allow-Origin", "*");
+        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        resp.setHeader("Access-Control-Allow-Headers", "Content-Type, token");
+        resp.setHeader("Access-Control-Max-Age", "3600");
     }
     
 }

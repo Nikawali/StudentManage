@@ -229,7 +229,7 @@ tbody tr:hover{
 
     <div class="header">
 
-        <div class="title">
+        <div class="title" id="pageTitle">
             班级管理
         </div>
 
@@ -239,13 +239,21 @@ tbody tr:hover{
 
     <div class="card">
 
-        <h3>新增班级</h3>
+        <h3 id="createCardTitle">新增班级</h3>
 
         <div class="form-row">
 
             <input
                     id="className"
                     placeholder="请输入班级名称">
+
+            <input
+                    id="college"
+                    placeholder="请输入学院">
+
+            <input
+                    id="major"
+                    placeholder="请输入专业">
 
             <input
                     id="teacherId"
@@ -267,7 +275,7 @@ tbody tr:hover{
 
     <div class="card">
 
-        <h3>班级列表</h3>
+        <h3 id="listCardTitle">班级列表</h3>
 
         <table>
 
@@ -278,6 +286,10 @@ tbody tr:hover{
     <th>班级ID</th>
 
     <th>班级名称</th>
+
+    <th>学院</th>
+
+    <th>专业</th>
 
     <th>教师ID</th>
 
@@ -313,8 +325,9 @@ tbody tr:hover{
 
 <script>
 
-const BASE_URL =
-"http://localhost:8080/test5_war_exploded/class";
+const BASE_URL="http://localhost:8080/test5_war_exploded/class"
+const currentRole = localStorage.getItem("role");
+let classListCache = [];
 
 function authFetch(
         url,
@@ -337,8 +350,15 @@ function authFetch(
     );
 }
 
-window.onload =
-        loadClassList;
+window.onload = function () {
+    if(currentRole !== "teacher" && currentRole !== "admin"){
+        alert("当前页面无访问权限，请重新登录");
+        location.href = "login.html";
+        return;
+    }
+    initPageByRole();
+    loadClassList();
+};
 
 async function loadClassList(){
 
@@ -359,6 +379,8 @@ async function loadClassList(){
         return;
     }
 
+    classListCache = result.data || [];
+
     const tbody =
             document.getElementById(
                     "tbody"
@@ -367,6 +389,7 @@ async function loadClassList(){
     tbody.innerHTML = "";
 
     result.data.forEach(item=>{
+    const teacherIdText = item.teacherId == null ? "未分配" : item.teacherId;
 
    tbody.innerHTML +=
 `
@@ -381,7 +404,15 @@ async function loadClassList(){
     </td>
 
     <td>
-        ${item.teacherId || "未分配"}
+        ${item.college || ""}
+    </td>
+
+    <td>
+        ${item.major || ""}
+    </td>
+
+    <td>
+        ${teacherIdText}
     </td>
 
     <td>
@@ -393,10 +424,7 @@ async function loadClassList(){
         <button
             class="btn btn-view action-btn"
             onclick="viewClass(
-                ${item.id},
-                '${item.className}',
-                '${item.teacherId}',
-                '${item.studentCount}'
+                ${item.id}
             )">
 
             查看
@@ -406,11 +434,7 @@ async function loadClassList(){
 
         <button
             class="btn btn-edit action-btn"
-            onclick="editClass(
-                ${item.id},
-                '${item.className}',
-                '${item.teacherId}'
-            )">
+            onclick="editClassById(${item.id})">
 
             修改
 
@@ -431,14 +455,35 @@ async function loadClassList(){
 </tr>
 `;
     });
+
 }
 
 async function addClass(){
+    if(currentRole !== "admin"){
+        alert("仅管理员可新增班级");
+        return;
+    }
 
     const className =
             document
                     .getElementById(
                             "className"
+                    )
+                    .value
+                    .trim();
+
+    const college =
+            document
+                    .getElementById(
+                            "college"
+                    )
+                    .value
+                    .trim();
+
+    const major =
+            document
+                    .getElementById(
+                            "major"
                     )
                     .value
                     .trim();
@@ -458,6 +503,16 @@ async function addClass(){
         return;
     }
 
+    if(!college){
+        alert("请输入学院");
+        return;
+    }
+
+    if(!major){
+        alert("请输入专业");
+        return;
+    }
+
     const params =
             new URLSearchParams();
 
@@ -469,6 +524,16 @@ async function addClass(){
     params.append(
             "className",
             className
+    );
+
+    params.append(
+            "college",
+            college
+    );
+
+    params.append(
+            "major",
+            major
     );
 
     params.append(
@@ -502,20 +567,47 @@ async function addClass(){
                         "teacherId"
                 ).value = "";
 
+        document
+                .getElementById(
+                        "college"
+                ).value = "";
+
+        document
+                .getElementById(
+                        "major"
+                ).value = "";
+
         loadClassList();
     }
 }
 
 // 查看班级 → 跳转到 index.html 页面
-function viewClass(id, className, teacherId) {
+function viewClass(id) {
     
     location.href = `index.html?classId=${id}`;
+}
+
+function editClassById(id){
+    const item = classListCache.find(classItem => classItem.id === id);
+    if(!item){
+        alert("未找到班级信息，请刷新页面后重试");
+        return;
+    }
+    editClass(
+            item.id,
+            item.className || "",
+            item.teacherId == null ? "" : String(item.teacherId),
+            item.college || "",
+            item.major || ""
+    );
 }
 
 async function editClass(
         id,
         oldName,
-        oldTeacherId
+        oldTeacherId,
+        oldCollege,
+        oldMajor
 ){
 
     const className =
@@ -529,14 +621,50 @@ async function editClass(
         return;
     }
 
-    const teacherId =
+    const college =
             prompt(
-                    "修改教师ID",
-                    oldTeacherId
+                    "修改学院",
+                    oldCollege
             );
 
-    if(teacherId == null){
+    if(college == null){
+        return;
+    }
 
+    const major =
+            prompt(
+                    "修改专业",
+                    oldMajor
+            );
+
+    if(major == null){
+        return;
+    }
+
+    const teacherId =
+            currentRole === "admin"
+                ? prompt(
+                        "修改教师ID",
+                        oldTeacherId
+                )
+                : oldTeacherId;
+
+    if(teacherId == null){
+        return;
+    }
+
+    if(!className.trim()){
+        alert("班级名称不能为空");
+        return;
+    }
+
+    if(!college.trim()){
+        alert("学院不能为空");
+        return;
+    }
+
+    if(!major.trim()){
+        alert("专业不能为空");
         return;
     }
 
@@ -555,7 +683,17 @@ async function editClass(
 
     params.append(
             "className",
-            className
+            className.trim()
+    );
+
+    params.append(
+            "college",
+            college.trim()
+    );
+
+    params.append(
+            "major",
+            major.trim()
     );
 
     params.append(
@@ -584,7 +722,6 @@ async function editClass(
 }
 
 async function deleteClass(id){
-
     if(
         !confirm(
             "确定删除该班级？"
@@ -631,7 +768,36 @@ async function deleteClass(id){
 function backHome(){
 
     location.href =
-            "home.html";
+            currentRole === "admin" ? "adminsHome.html" : "teacherHome.html";
+}
+
+function initPageByRole(){
+    const pageTitle = document.getElementById("pageTitle");
+    const listCardTitle = document.getElementById("listCardTitle");
+    const createCardTitle = document.getElementById("createCardTitle");
+
+    if(currentRole === "admin"){
+        if(pageTitle){
+            pageTitle.innerText = "班级管理";
+        }
+        if(listCardTitle){
+            listCardTitle.innerText = "班级列表";
+        }
+        if(createCardTitle){
+            createCardTitle.innerText = "新增班级";
+        }
+        return;
+    }
+    if(pageTitle){
+        pageTitle.innerText = "本班班级管理";
+    }
+    if(listCardTitle){
+        listCardTitle.innerText = "本班班级信息";
+    }
+    const addCard = document.querySelector(".container .card");
+    if(addCard){
+        addCard.style.display = "none";
+    }
 }
 
 </script>

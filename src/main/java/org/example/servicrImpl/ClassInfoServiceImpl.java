@@ -1,5 +1,7 @@
 package org.example.servicrImpl;
 
+import org.example.auth.AuthContext;
+import org.example.auth.AuthService;
 import org.example.dao.ClassInfoDAO;
 import org.example.dao.StudentDAO;
 import org.example.dao.TeacherDAO;
@@ -8,13 +10,11 @@ import org.example.entity.Teacher;
 import org.example.exception.BusinessesException;
 import org.example.service.ClassInfoService;
 import org.example.utils.DBUtils;
-import redis.clients.jedis.Jedis;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
-
-import static org.example.servicrImpl.StudentServiceImpl.checkTeacher;
 
 public class ClassInfoServiceImpl implements ClassInfoService {
 
@@ -30,7 +30,7 @@ public class ClassInfoServiceImpl implements ClassInfoService {
 
     @Override
     public boolean addClass(ClassInfo classInfo, String token) {
-        checkTeacher(token);
+        AuthService.requireAdmin(token);
         if (classInfo == null) {
             throw new BusinessesException(400, "班级不能为空");
         }
@@ -38,18 +38,16 @@ public class ClassInfoServiceImpl implements ClassInfoService {
         try {
             conn.setAutoCommit(false);
 
-            if (classInfo.getTeacherId() == null) {
-                throw new BusinessesException(400, "请输入教师Id");
-            }
+            Teacher teacher = null;
+            if (classInfo.getTeacherId() != null) {
+                teacher = teacherDAO.findById(conn, classInfo.getTeacherId());
+                if (teacher == null) {
+                    throw new BusinessesException(400, "教师不存在");
+                }
 
-            // ===== 修复：必须用同一个连接 =====
-            Teacher teacher = teacherDAO.findById(conn, classInfo.getTeacherId());
-            if (teacher == null) {
-                throw new BusinessesException(400, "教师不存在");
-            }
-
-            if (teacher.getClassId() != null) {
-                throw new BusinessesException(400, "该教师已绑定班级");
+                if (teacher.getClassId() != null) {
+                    throw new BusinessesException(400, "该教师已绑定班级");
+                }
             }
 
             boolean insertSuccess = classDAO.insert(conn, classInfo);
@@ -62,10 +60,12 @@ public class ClassInfoServiceImpl implements ClassInfoService {
                 throw new BusinessesException(500, "班级ID获取失败，数据异常");
             }
 
-            teacher.setClassId(classId);
-            boolean updateSuccess = teacherDAO.updateClassId(conn, teacher);
-            if (!updateSuccess) {
-                throw new BusinessesException(500, "教师绑定班级失败");
+            if (teacher != null) {
+                teacher.setClassId(classId);
+                boolean updateSuccess = teacherDAO.updateClassId(conn, teacher);
+                if (!updateSuccess) {
+                    throw new BusinessesException(500, "教师绑定班级失败");
+                }
             }
 
             conn.commit();
@@ -88,7 +88,7 @@ public class ClassInfoServiceImpl implements ClassInfoService {
 
     @Override
     public boolean deleteClass(Integer id, String token) {
-        checkTeacher(token);
+        AuthContext auth = AuthService.requireTeacherOrAdmin(token);
         if (id == null || id <= 0) {
             throw new BusinessesException(400, "班级ID非法");
         }
@@ -96,18 +96,17 @@ public class ClassInfoServiceImpl implements ClassInfoService {
         try {
             conn.setAutoCommit(false);
 
-            // ===== 修复：必须用同一个连接查询 =====
             ClassInfo oldClass = classDAO.findById(conn, id);
             if (oldClass == null) {
                 throw new BusinessesException(404, "班级不存在");
             }
+            ensureTeacherCanAccessClass(auth, oldClass);
 
             int count = studentDAO.countByClassId(conn, id);
             if (count > 0) {
                 throw new BusinessesException(400, "班级中还有学生，不能删除");
             }
 
-            // ===== 修复：旧老师清空班级 =====
             Long oldTeacherId = oldClass.getTeacherId();
             if (oldTeacherId != null) {
                 Teacher oldTeacher = new Teacher();
@@ -116,7 +115,6 @@ public class ClassInfoServiceImpl implements ClassInfoService {
                 teacherDAO.updateClassId(conn, oldTeacher);
             }
 
-            // 删除班级
             boolean flag = classDAO.deleteById(conn, id);
             if (!flag) {
                 throw new BusinessesException(500, "删除班级失败");
@@ -142,7 +140,7 @@ public class ClassInfoServiceImpl implements ClassInfoService {
 
     @Override
     public boolean updateClass(ClassInfo classInfo, String token) {
-        checkTeacher(token);
+        AuthContext auth = AuthService.requireTeacherOrAdmin(token);
         if (classInfo == null) {
             throw new BusinessesException(400, "班级不能为空");
         }
@@ -154,40 +152,52 @@ public class ClassInfoServiceImpl implements ClassInfoService {
             if (oldClass == null) {
                 throw new BusinessesException(404, "班级不存在");
             }
+            ensureTeacherCanAccessClass(auth, oldClass);
 
             Long newTeacherId = classInfo.getTeacherId();
-
-            Teacher newTeacher = teacherDAO.findById(conn, newTeacherId);
-            if (newTeacher == null) {
-                throw new BusinessesException(400, "教师不存在");
+            if (auth.isTeacher()) {
+                newTeacherId = auth.getUserId();
+                classInfo.setTeacherId(newTeacherId);
             }
 
-            if (
-                    newTeacher.getClassId() != null
-                            &&
-                            !newTeacher.getClassId().equals(
-                                    classInfo.getId()
-                            )
-            ) {
-
-                throw new BusinessesException(
-                        400,
-                        "该教师已绑定其它班级"
-                );
-            }
-
-            // 老师切换逻辑
             Long oldTeacherId = oldClass.getTeacherId();
-            if (oldTeacherId == null || !oldTeacherId.equals(newTeacherId)) {
-                if (oldTeacherId != null) {
-                    Teacher oldTeacher = new Teacher();
-                    oldTeacher.setTeacherId(oldTeacherId);
-                    oldTeacher.setClassId(null);
-                    teacherDAO.updateClassId(conn, oldTeacher);
-                }
+            if (auth.isAdmin()) {
+                if (newTeacherId == null) {
+                    if (oldTeacherId != null) {
+                        Teacher oldTeacher = new Teacher();
+                        oldTeacher.setTeacherId(oldTeacherId);
+                        oldTeacher.setClassId(null);
+                        teacherDAO.updateClassId(conn, oldTeacher);
+                    }
+                } else if (oldTeacherId == null || !oldTeacherId.equals(newTeacherId)) {
+                    Teacher newTeacher = teacherDAO.findById(conn, newTeacherId);
+                    if (newTeacher == null) {
+                        throw new BusinessesException(400, "教师不存在");
+                    }
 
-                newTeacher.setClassId(classInfo.getId());
-                teacherDAO.updateClassId(conn, newTeacher);
+                    if (
+                            newTeacher.getClassId() != null
+                                    &&
+                                    !newTeacher.getClassId().equals(
+                                            classInfo.getId()
+                                    )
+                    ) {
+                        throw new BusinessesException(
+                                400,
+                                "该教师已绑定其它班级"
+                        );
+                    }
+
+                    if (oldTeacherId != null) {
+                        Teacher oldTeacher = new Teacher();
+                        oldTeacher.setTeacherId(oldTeacherId);
+                        oldTeacher.setClassId(null);
+                        teacherDAO.updateClassId(conn, oldTeacher);
+                    }
+
+                    newTeacher.setClassId(classInfo.getId());
+                    teacherDAO.updateClassId(conn, newTeacher);
+                }
             }
 
             boolean updateSuccess = classDAO.update(conn, classInfo);
@@ -227,7 +237,33 @@ public class ClassInfoServiceImpl implements ClassInfoService {
 
     @Override
     public List<ClassInfo> findAll(String token) {
-        checkTeacher(token);
-        return classDAO.findAll();
+        AuthContext auth = AuthService.requireTeacherOrAdmin(token);
+        List<ClassInfo> list = classDAO.findAll();
+        if (auth.isAdmin()) {
+            return list;
+        }
+        Teacher teacher = teacherDAO.findById(auth.getUserId());
+        if (teacher == null) {
+            throw new BusinessesException(404, "教师不存在");
+        }
+        if (teacher.getClassId() == null) {
+            throw new BusinessesException(403, "当前教师未绑定班级");
+        }
+        List<ClassInfo> result = new ArrayList<>();
+        for (ClassInfo item : list) {
+            if (auth.getUserId().equals(item.getTeacherId())) {
+                result.add(item);
+            }
+        }
+        return result;
+    }
+
+    private void ensureTeacherCanAccessClass(AuthContext auth, ClassInfo classInfo) {
+        if (auth.isAdmin()) {
+            return;
+        }
+        if (classInfo.getTeacherId() == null || !auth.getUserId().equals(classInfo.getTeacherId())) {
+            throw new BusinessesException(403, "教师仅可操作所属班级");
+        }
     }
 }

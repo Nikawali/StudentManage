@@ -1,6 +1,5 @@
 package org.example.dao;
 
-import org.example.entity.Student;
 import org.example.entity.Teacher;
 import org.example.utils.DBUtils;
 import org.example.utils.DaoUtils;
@@ -13,44 +12,31 @@ import java.util.List;
 
 public class TeacherDAO {
 
-/*    public boolean insert(Teacher teacher) {
-
+    public boolean insert(Connection conn, Teacher teacher) {
         String sql =
                 "insert into teacher " +
-                        "(teacherId,name,phone) " +
+                        "(teacherId,name,gender,phone,classId) " +
                         "values " +
-                        "(#{teacherId},#{name},#{phone})";
-
-        try (
-                Connection conn =
-                        DBUtils.getConnection();
-
-                PreparedStatement ps =
-                        conn.prepareStatement(
-                                DaoUtils.parseSql(sql)
-                        )
-        ) {
-
+                        "(#{teacherId},#{name},#{gender},#{phone},#{classId})";
+        try (PreparedStatement ps = conn.prepareStatement(DaoUtils.parseSql(sql))) {
             DaoUtils.objectToPreparedStatement(
                     teacher,
                     ps,
                     DaoUtils.getFieldNames(sql)
                             .toArray(new String[0])
             );
-
             return ps.executeUpdate() > 0;
-
         } catch (Exception e) {
-
             throw new RuntimeException(e);
         }
-    }*/
+    }
 
     public boolean update(Connection conn,Teacher teacher) {
 
         String sql =
                 "update teacher set " +
                         "name=#{name}, " +
+                        "gender=#{gender}, " +
                         "phone=#{phone}, " +
                         "classId=#{classId} "+
                         "where teacherId=#{teacherId}";
@@ -247,4 +233,4 @@ public class TeacherDAO {
 
         return null;
     }
-    }
+}

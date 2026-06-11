@@ -89,7 +89,7 @@
             id="studentManageBtn"
             class="btn primary">
 
-        学生管理
+        本班学生管理
 
     </button>
 
@@ -97,7 +97,7 @@
             id="classManageBtn"
             class="btn primary">
 
-        班级管理
+        本班班级管理
 
     </button>
 
@@ -117,8 +117,8 @@
 </div>
 
 <script>
-    const BASE_URL =
-"http://localhost:8080/test5_war_exploded/teacher";
+const BASE_URL="http://localhost:8080/test5_war_exploded/teacher"
+const currentRole = localStorage.getItem("role");
 
 function authFetch(
 url,
@@ -145,9 +145,15 @@ return fetch(
 }
 
 window.onload = function(){
-
+if(currentRole !== "teacher"){
+    alert("当前页面无访问权限，请重新登录");
+    location.href = "login.html";
+    return;
+}
 
 loadTeacherInfo();
+
+setTeacherEntryText();
 
 bindEvent();
 
@@ -197,7 +203,11 @@ authFetch(
     document.getElementById(
         "teacherClassId"
     ).innerText =
-        teacher.classId;
+        teacher.classId == null ? "未绑定" : teacher.classId;
+    localStorage.setItem(
+        "teacherClassId",
+        teacher.classId == null ? "" : teacher.classId
+    );
     document.getElementById(
        "phone"
     ).innerText =
@@ -256,7 +266,6 @@ document
     };
 
 document.getElementById("editTeacherBtn").onclick = async function () {
-    // 1. 先获取当前教师信息（用来回填默认值）
     const response = await authFetch(BASE_URL + "?action=findById");
     const result = await response.json();
 
@@ -267,7 +276,6 @@ document.getElementById("editTeacherBtn").onclick = async function () {
 
     const teacher = result.data;
 
-    // 2. 弹窗输入（参考你的学生编辑风格）
     const name = prompt("请输入姓名", teacher.name);
     if (name === null || name === "") return;
 
@@ -277,17 +285,13 @@ document.getElementById("editTeacherBtn").onclick = async function () {
     const phone = prompt("请输入手机号", teacher.phone);
     if (phone === null || phone === "") return;
 
-    const classId = prompt("请输入班级ID", teacher.classId);
-    if (classId === null) return;
-
     const params = new URLSearchParams();
     params.append("action", "update");
     params.append("name", name);
     params.append("gender", gender);
     params.append("phone", phone);
-    params.append("classId", classId);
+    params.append("classId", teacher.classId == null ? "" : teacher.classId);
 
-    // 4. 提交更新
     const updateResponse = await authFetch(BASE_URL, {
         method: "POST",
         body: params
@@ -300,6 +304,11 @@ document.getElementById("editTeacherBtn").onclick = async function () {
         loadTeacherInfo();
     }
 };
+}
+
+function setTeacherEntryText(){
+    document.getElementById("studentManageBtn").innerText = "本班学生管理";
+    document.getElementById("classManageBtn").innerText = "本班班级管理";
 }
 
 </script>

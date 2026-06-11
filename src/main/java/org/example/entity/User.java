@@ -38,8 +38,8 @@ public class User {
     }
 
     public void setRole(String role){
-        if (!"student".equals(role) && !"teacher".equals(role)) {
-            throw new BusinessesException(400,"角色为student或teacher");
+        if (!"student".equals(role) && !"teacher".equals(role) && !"admin".equals(role)) {
+            throw new BusinessesException(400,"角色必须为student、teacher或admin");
         }
 
         this.role = role;

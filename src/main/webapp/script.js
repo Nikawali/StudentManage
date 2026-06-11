@@ -1,5 +1,5 @@
-const BASE_URL =
-    "http://localhost:8080/test5_war_exploded/student";
+const BASE_URL="http://localhost:8080/test5_war_exploded/student"
+const currentRole = localStorage.getItem("role");
 
 function getToken() {
     return localStorage.getItem("token");
@@ -17,24 +17,24 @@ function authFetch(
 }
 
 window.onload = function () {
-    // 获取地址栏 classId
+    if (currentRole !== "teacher" && currentRole !== "admin") {
+        alert("当前页面无访问权限，请重新登录");
+        location.href = "login.html";
+        return;
+    }
     const urlParams = new URLSearchParams(window.location.search);
     const classId = urlParams.get("classId");
 
-    // 有班级ID → 只查该班学生
     if (classId) {
         searchStudentByClassId(classId);
     } else {
-        // 无 → 查全部
         loadStudents();
     }
 
+    initPageByRole(classId);
     bindButtonEvent();
 };
 
-/**
- * 查询全部学生
- */
 function loadStudents() {
     authFetch(BASE_URL + "?action=findAll")
         .then(response => response.json())
@@ -45,37 +45,7 @@ function loadStudents() {
                 return;
             }
 
-            let html = "";
-            result.data.forEach(student => {
-                html += `
-<tr>
-    <td>
-        <input type="checkbox" class="row-checkbox" data-id="${student.studentId}">
-    </td>
-    <td>${student.studentId}</td>
-    <td>${student.name}</td>
-    <td>${student.gender}</td>
-    <td>${student.age}</td>
-    <td>${student.phone}</td>
-    <td>${student.classId}</td>
-    <td>${student.college}</td>
-    <td>${student.major}</td>
-    <td>
-        <a href="#" class="operate-link edit-btn"
-           data-id="${student.studentId}"
-           data-name="${student.name}"
-           data-gender="${student.gender}"
-           data-age="${student.age}"
-           data-phone="${student.phone}"
-           data-classid="${student.classId}"
-           data-college="${student.college}"
-           data-major="${student.major}">编辑</a>
-        <a href="#" class="operate-link delete-one-btn" data-id="${student.studentId}">删除</a>
-    </td>
-</tr>`;
-            });
-
-            document.getElementById("studentBody").innerHTML = html;
+            document.getElementById("studentBody").innerHTML = renderStudentRows(result.data);
             bindCheckboxEvent();
             bindDeleteEvent();
             bindEditEvent();
@@ -86,9 +56,6 @@ function loadStudents() {
         });
 }
 
-/**
- * 根据班级ID查询学生（跳转自动调用）
- */
 function searchStudentByClassId(classId) {
     authFetch(
         BASE_URL + "?action=findByClassId&classId=" + classId
@@ -101,35 +68,7 @@ function searchStudentByClassId(classId) {
             return;
         }
 
-        let html = "";
-        result.data.forEach(student => {
-            html += `
-<tr>
-    <td><input type="checkbox" class="row-checkbox" data-id="${student.studentId}"></td>
-    <td>${student.studentId}</td>
-    <td>${student.name}</td>
-    <td>${student.gender}</td>
-    <td>${student.age}</td>
-    <td>${student.phone}</td>
-    <td>${student.classId}</td>
-    <td>${student.college}</td>
-    <td>${student.major}</td>
-    <td>
-        <a href="#" class="operate-link edit-btn"
-           data-id="${student.studentId}"
-           data-name="${student.name}"
-           data-gender="${student.gender}"
-           data-age="${student.age}"
-           data-phone="${student.phone}"
-           data-classid="${student.classId}"
-           data-college="${student.college}"
-           data-major="${student.major}">编辑</a>
-        <a href="#" class="operate-link delete-one-btn" data-id="${student.studentId}">删除</a>
-    </td>
-</tr>`;
-        });
-
-        document.getElementById("studentBody").innerHTML = html;
+        document.getElementById("studentBody").innerHTML = renderStudentRows(result.data);
         bindCheckboxEvent();
         bindDeleteEvent();
         bindEditEvent();
@@ -140,18 +79,15 @@ function searchStudentByClassId(classId) {
     });
 }
 
-/**
- * 按钮事件
- */
 function bindButtonEvent() {
     document.querySelector(".add-btn").onclick = addStudent;
     document.querySelector(".delete-btn").onclick = batchDelete;
     document.querySelector(".search-btn").onclick = searchStudent;
+    if (currentRole !== "admin") {
+        document.querySelector(".add-btn").style.display = "none";
+    }
 }
 
-/**
- * 全选事件
- */
 function bindCheckboxEvent() {
     const selectAll = document.getElementById("selectAll");
     const rowCheckboxes = document.querySelectorAll(".row-checkbox");
@@ -170,10 +106,12 @@ function bindCheckboxEvent() {
     });
 }
 
-/**
- * 新增学生
- */
+// ====================== 新增学生：classId 不能为空 ======================
 function addStudent() {
+    if (currentRole !== "admin") {
+        alert("仅管理员可新增学生");
+        return;
+    }
     const studentId = prompt("请输入学号");
     if (!studentId) return;
 
@@ -189,9 +127,14 @@ function addStudent() {
     const phone = prompt("请输入手机号");
     if (!phone) return;
 
-    const classId = prompt("请输入班级ID");
-    if (!classId) return;
-
+    let classId;
+    while (true) {
+        classId = resolveClassIdForEdit();
+        if (classId && classId.trim() !== "") {
+            break;
+        }
+        alert("班级ID不能为空，请重新输入！");
+    }
 
     const params = new URLSearchParams();
     params.append("action", "add");
@@ -219,9 +162,6 @@ function addStudent() {
     });
 }
 
-/**
- * 单个删除
- */
 function bindDeleteEvent() {
     document.querySelectorAll(".delete-one-btn").forEach(btn => {
         btn.onclick = function (e) {
@@ -235,9 +175,6 @@ function bindDeleteEvent() {
     });
 }
 
-/**
- * 删除学生
- */
 function deleteStudent(studentId) {
     const params = new URLSearchParams();
     params.append("action", "deleteStudent");
@@ -265,9 +202,6 @@ function deleteStudent(studentId) {
     });
 }
 
-/**
- * 批量删除
- */
 async function batchDelete() {
     const checkedList = document.querySelectorAll(".row-checkbox:checked");
     if (checkedList.length === 0) {
@@ -301,6 +235,7 @@ async function batchDelete() {
     loadStudents();
 }
 
+// ====================== 修改学生：classId 不能为空 ======================
 function bindEditEvent() {
     document.querySelectorAll(".edit-btn").forEach(btn => {
         btn.onclick = function (e) {
@@ -318,8 +253,16 @@ function bindEditEvent() {
             const phone = prompt("手机号", this.dataset.phone);
             if (!phone) return;
 
-            const classId = prompt("班级ID", this.dataset.classid);
-            if (!classId) return;
+            let classId = this.dataset.classid;
+            if (currentRole === "admin") {
+                while (true) {
+                    classId = prompt("班级ID", this.dataset.classid);
+                    if (classId && classId.trim() !== "") {
+                        break;
+                    }
+                    alert("班级ID不能为空，请重新输入！");
+                }
+            }
 
             updateStudent(
                 studentId,
@@ -370,10 +313,12 @@ function updateStudent(
     });
 }
 
+// ====================== 查询学生（按班级）：classId 不能为空 ======================
 function searchStudent() {
-    const type = prompt(
-        "请输入查询方式：\n1-学号精准查询\n2-模糊查询\n3-班级ID查询"
-    );
+    const tip = currentRole === "admin"
+        ? "请输入查询方式：\n1-学号精准查询\n2-模糊查询\n3-班级ID查询"
+        : "请输入查询方式：\n1-本班学号精准查询\n2-本班模糊查询";
+    const type = prompt(tip);
     if (!type) return;
 
     if (type === "1") {
@@ -391,30 +336,7 @@ function searchStudent() {
             }
 
             const student = result.data;
-            document.getElementById("studentBody").innerHTML = `
-<tr>
-<td><input type="checkbox" class="row-checkbox" data-id="${student.studentId}"></td>
-<td>${student.studentId}</td>
-<td>${student.name}</td>
-<td>${student.gender}</td>
-<td>${student.age}</td>
-<td>${student.phone}</td>
-<td>${student.classId}</td>
-<td>${student.college}</td>
-<td>${student.major}</td>
-<td>
-<a href="#" class="operate-link edit-btn"
-data-id="${student.studentId}"
-data-name="${student.name}"
-data-gender="${student.gender}"
-data-age="${student.age}"
-data-phone="${student.phone}"
-data-classid="${student.classId}"
-data-college="${student.college}"
-data-major="${student.major}">编辑</a>
-<a href="#" class="operate-link delete-one-btn" data-id="${student.studentId}">删除</a>
-</td>
-</tr>`;
+            document.getElementById("studentBody").innerHTML = renderStudentRows([student]);
             bindCheckboxEvent();
             bindDeleteEvent();
             bindEditEvent();
@@ -438,35 +360,7 @@ data-major="${student.major}">编辑</a>
                 return;
             }
 
-            let html = "";
-            result.data.forEach(student => {
-                html += `
-<tr>
-<td><input type="checkbox" class="row-checkbox" data-id="${student.studentId}"></td>
-<td>${student.studentId}</td>
-<td>${student.name}</td>
-<td>${student.gender}</td>
-<td>${student.age}</td>
-<td>${student.phone}</td>
-<td>${student.classId}</td>
-<td>${student.college}</td>
-<td>${student.major}</td>
-<td>
-<a href="#" class="operate-link edit-btn"
-data-id="${student.studentId}"
-data-name="${student.name}"
-data-gender="${student.gender}"
-data-age="${student.age}"
-data-phone="${student.phone}"
-data-classid="${student.classId}"
-data-college="${student.college}"
-data-major="${student.major}">编辑</a>
-<a href="#" class="operate-link delete-one-btn" data-id="${student.studentId}">删除</a>
-</td>
-</tr>`;
-            });
-
-            document.getElementById("studentBody").innerHTML = html;
+            document.getElementById("studentBody").innerHTML = renderStudentRows(result.data);
             bindCheckboxEvent();
             bindDeleteEvent();
             bindEditEvent();
@@ -475,12 +369,109 @@ data-major="${student.major}">编辑</a>
             console.error(error);
             alert("查询失败");
         });
-    } else if (type === "3") {
-        const classId = prompt("请输入班级ID");
-        if (!classId) return;
+    } else if (type === "3" && currentRole === "admin") {
+        let classId;
+        while (true) {
+            classId = prompt("请输入班级ID");
+            if (classId && classId.trim() !== "") {
+                break;
+            }
+            alert("班级ID不能为空，请重新输入！");
+        }
         searchStudentByClassId(classId);
     }
     else {
-        alert("请输入1或2或3");
+        alert(currentRole === "admin" ? "请输入1或2或3" : "请输入1或2");
     }
+}
+
+// ====================== 获取班级ID：prompt 不能为空 ======================
+function resolveClassIdForEdit() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageClassId = urlParams.get("classId");
+    if (pageClassId) {
+        return pageClassId;
+    }
+    if (currentRole === "teacher") {
+        const teacherClassId = localStorage.getItem("teacherClassId");
+        if (teacherClassId) {
+            return teacherClassId;
+        }
+    }
+
+    let classId;
+    while (true) {
+        classId = prompt("请输入班级ID");
+        if (classId && classId.trim() !== "") {
+            break;
+        }
+        alert("班级ID不能为空，请重新输入！");
+    }
+    return classId;
+}
+
+function initPageByRole(classId) {
+    const pageTitle = document.getElementById("pageTitle");
+    const pageInfo = document.getElementById("pageInfo");
+    const deleteBtn = document.querySelector(".delete-btn");
+    const searchBtn = document.querySelector(".search-btn");
+
+    if (!pageTitle || !pageInfo) {
+        return;
+    }
+
+    if (currentRole === "admin") {
+        pageTitle.innerText = classId ? "班级学生管理" : "学生管理系统";
+        pageInfo.innerText = classId ? "班级学生列表" : "全部学生列表";
+        if (deleteBtn) {
+            deleteBtn.innerText = "删除";
+        }
+        if (searchBtn) {
+            searchBtn.innerText = "查询";
+        }
+        return;
+    }
+
+    pageTitle.innerText = classId ? "本班学生管理" : "学生管理系统";
+    pageInfo.innerText = "本班学生列表";
+    if (deleteBtn) {
+        deleteBtn.innerText = "删除本班学生";
+    }
+    if (searchBtn) {
+        searchBtn.innerText = "查询本班学生";
+    }
+}
+
+function renderStudentRows(students) {
+    let html = "";
+    students.forEach(student => {
+        const classId = student.classId == null ? "" : student.classId;
+        const college = student.college == null ? "" : student.college;
+        const major = student.major == null ? "" : student.major;
+        html += `
+<tr>
+    <td><input type="checkbox" class="row-checkbox" data-id="${student.studentId}"></td>
+    <td>${student.studentId}</td>
+    <td>${student.name}</td>
+    <td>${student.gender}</td>
+    <td>${student.age}</td>
+    <td>${student.phone}</td>
+    <td>${classId}</td>
+    <td>${college}</td>
+    <td>${major}</td>
+    <td>
+        <a href="#" class="operate-link edit-btn"
+           data-id="${student.studentId}"
+           data-name="${student.name}"
+           data-gender="${student.gender}"
+           data-age="${student.age}"
+           data-phone="${student.phone}"
+           data-classid="${classId}"
+           data-college="${college}"
+           data-major="${major}">编辑</a>
+        <a href="#" class="operate-link delete-one-btn" data-id="${student.studentId}">删除</a>
+    </td>
+</tr>`;
+    });
+    return html;
 }

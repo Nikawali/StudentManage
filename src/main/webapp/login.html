@@ -23,7 +23,7 @@
         <label>密码</label>
       </div>
       <button class="btn" type="submit">登录</button>
-      <button type="button" class="btn-1" onclick="register()">注册</button>
+  
 
       <div class="agree">
         <input type="checkbox" id="agree">
@@ -34,10 +34,6 @@
   </div>
 
   <script>
-    function register() {
-      window.location.href = "register.html";
-    }
-
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -90,6 +86,8 @@
             window.location.href = "studentHome.html";
           } else if(data.data.role==="teacher") {
             window.location.href = "teacherHome.html";
+          }else if(data.data.role==="admin") {
+              window.location.href = "adminHome.html";
           }
         }, 500);
 

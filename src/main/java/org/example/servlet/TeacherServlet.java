@@ -1,8 +1,8 @@
 package org.example.servlet;
 
-import com.alibaba.fastjson2.JSON;
 import org.example.dao.ClassInfoDAO;
 import org.example.dao.TeacherDAO;
+import org.example.dao.UserDAO;
 import org.example.entity.Teacher;
 import org.example.exception.BusinessesException;
 import org.example.service.TeacherService;
@@ -20,214 +20,211 @@ import java.io.IOException;
 @WebServlet("/teacher")
 public class TeacherServlet extends HttpServlet {
 
-    private TeacherService teacherService;
+        private TeacherService teacherService;
 
-    @Override
-    protected void doOptions(
-            HttpServletRequest req,
-            HttpServletResponse resp)
-            throws IOException {
+        @Override
+        protected void doOptions(
+                        HttpServletRequest req,
+                        HttpServletResponse resp)
+                        throws IOException {
 
-        resp.setHeader(
-                "Access-Control-Allow-Origin",
-                "*");
+                resp.setHeader(
+                                "Access-Control-Allow-Origin",
+                                "*");
 
-        resp.setHeader(
-                "Access-Control-Allow-Headers",
-                "Content-Type, token");
+                resp.setHeader(
+                                "Access-Control-Allow-Headers",
+                                "Content-Type, token");
 
-        resp.setHeader(
-                "Access-Control-Allow-Methods",
-                "GET,POST,PUT,DELETE,OPTIONS");
+                resp.setHeader(
+                                "Access-Control-Allow-Methods",
+                                "GET,POST,PUT,DELETE,OPTIONS");
 
-        resp.setStatus(
-                HttpServletResponse.SC_OK);
-    }
-    @Override
-    public void init() throws ServletException {
-
-        TeacherDAO teacherDAO =
-                new TeacherDAO();
-        ClassInfoDAO classInfoDAO=new ClassInfoDAO();
-
-        teacherService =
-                new TeacherServiceImpl(
-                        teacherDAO,
-                        classInfoDAO
-                );
-    }
-
-    @Override
-    protected void doGet(
-            HttpServletRequest req,
-            HttpServletResponse resp)
-            throws ServletException, IOException {
-        resp.setHeader("Access-Control-Allow-Origin", "*");           // 允许所有来源（开发阶段）
-        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        resp.setHeader("Access-Control-Max-Age", "3600");
-        String action =
-                req.getParameter("action");
-
-        Result<?> result;
-
-        switch (action) {
-
-            case "findById":
-                result = findById(req);
-                break;
-
-
-            default:
-                result = Result.fail("未知操作");
+                resp.setStatus(
+                                HttpServletResponse.SC_OK);
         }
 
-        WriteJson.writeJson(resp, result);
-    }
+        @Override
+        public void init() throws ServletException {
 
-    @Override
-    protected void doPost(
-            HttpServletRequest req,
-            HttpServletResponse resp)
-            throws ServletException, IOException {
-        resp.setHeader("Access-Control-Allow-Origin", "*");           // 允许所有来源（开发阶段）
-        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        resp.setHeader("Access-Control-Max-Age", "3600");
-        req.setCharacterEncoding("UTF-8");
+                TeacherDAO teacherDAO = new TeacherDAO();
+                ClassInfoDAO classInfoDAO = new ClassInfoDAO();
 
-        String action =
-                req.getParameter("action");
-
-        Result<?> result;
-
-        switch (action) {
-
-/*            case "add":
-                result = addTeacher(req);
-                break;*/
-
-            case "update":
-                result = updateTeacher(req);
-                break;
-
-/*            case "delete":
-                result = deleteTeacher(req);
-                break;*/
-
-            default:
-                result = Result.fail("未知操作");
+                teacherService = new TeacherServiceImpl(
+                                teacherDAO,
+                                classInfoDAO,
+                                new UserDAO());
         }
 
-        WriteJson.writeJson(resp, result);
-    }
+        @Override
+        protected void doGet(
+                        HttpServletRequest req,
+                        HttpServletResponse resp)
+                        throws ServletException, IOException {
+                setCors(resp);
+                String action = req.getParameter("action");
 
+                Result<?> result;
 
-    private Result<Boolean> updateTeacher(
-            HttpServletRequest req) {
+                switch (action) {
 
-        try {
+                        case "findById":
+                                result = findById(req);
+                                break;
 
-            String token =
-                    req.getHeader("token");
+                        default:
+                                result = Result.fail("未知操作");
+                }
 
-            Teacher teacher =
-                    buildTeacher(req);
-
-            teacherService.updateTeacher(
-                    teacher,
-                    token
-            );
-
-            return Result.success(
-                    "修改教师成功",
-                    true
-            );
-
-        } catch (BusinessesException e) {
-
-            return Result.fail(
-                    e.getCode(),
-                    e.getMessage()
-            );
+                WriteJson.writeJson(resp, result);
         }
-    }
 
-/*    private Result<Boolean> deleteTeacher(
-            HttpServletRequest req) {
+        @Override
+        protected void doPost(
+                        HttpServletRequest req,
+                        HttpServletResponse resp)
+                        throws ServletException, IOException {
+                setCors(resp);
+                req.setCharacterEncoding("UTF-8");
 
-        try {
+                String action = req.getParameter("action");
 
-            String token =
-                    req.getHeader("token");
+                Result<?> result;
 
-            teacherService.deleteTeacher(
-                    token
-            );
+                switch (action) {
 
-            return Result.success(
-                    "删除教师成功",
-                    true
-            );
+                        /*
+                         * case "add":
+                         * result = addTeacher(req);
+                         * break;
+                         */
 
-        } catch (BusinessesException e) {
+                        case "update":
+                                result = updateTeacher(req);
+                                break;
 
-            return Result.fail(
-                    e.getCode(),
-                    e.getMessage()
-            );
+                        /*
+                         * case "delete":
+                         * result = deleteTeacher(req);
+                         * break;
+                         */
+
+                        default:
+                                result = Result.fail("未知操作");
+                }
+
+                WriteJson.writeJson(resp, result);
         }
-    }*/
 
-    private Result<Teacher> findById(
-            HttpServletRequest req) {
+        private Result<Boolean> updateTeacher(
+                        HttpServletRequest req) {
 
-        try {
+                try {
 
-            String token =
-                    req.getHeader("token");
+                        String token = req.getHeader("token");
 
-            Teacher teacher =
-                    teacherService.findById(
-                            token
-                    );
+                        Teacher teacher = buildTeacher(req);
 
-            return Result.success(
-                    "查询成功",
-                    teacher
-            );
+                        teacherService.updateTeacher(
+                                        teacher,
+                                        token);
 
-        } catch (BusinessesException e) {
+                        return Result.success(
+                                        "修改教师成功",
+                                        true);
 
-            return Result.fail(
-                    e.getCode(),
-                    e.getMessage()
-            );
+                } catch (BusinessesException e) {
+
+                        return Result.fail(
+                                        e.getCode(),
+                                        e.getMessage());
+                }
         }
-    }
 
-    private Teacher buildTeacher(
-            HttpServletRequest req) {
+        /*
+         * private Result<Boolean> deleteTeacher(
+         * HttpServletRequest req) {
+         * 
+         * try {
+         * 
+         * String token =
+         * req.getHeader("token");
+         * 
+         * teacherService.deleteTeacher(
+         * token
+         * );
+         * 
+         * return Result.success(
+         * "删除教师成功",
+         * true
+         * );
+         * 
+         * } catch (BusinessesException e) {
+         * 
+         * return Result.fail(
+         * e.getCode(),
+         * e.getMessage()
+         * );
+         * }
+         * }
+         */
 
-        Teacher teacher = new Teacher();
+        private Result<Teacher> findById(
+                        HttpServletRequest req) {
 
-        teacher.setName(
-                req.getParameter("name"));
+                try {
 
-        teacher.setGender(
-                req.getParameter("gender"));
+                        String token = req.getHeader("token");
 
-        teacher.setPhone(
-                req.getParameter("phone"));
+                        Teacher teacher = teacherService.findById(
+                                        token);
 
-/*    teacher.setTeacherId(
-                Long.parseLong(
-                req.getParameter("teacherId")));*/
+                        return Result.success(
+                                        "查询成功",
+                                        teacher);
 
-     teacher.setClassId(
-                Integer.parseInt(
-                        req.getParameter("classId")));
+                } catch (BusinessesException e) {
 
-        return teacher;
-    }
+                        return Result.fail(
+                                        e.getCode(),
+                                        e.getMessage());
+                }
+        }
+
+        private Teacher buildTeacher(HttpServletRequest req) {
+                Teacher teacher = new Teacher();
+
+                // 姓名：判空 + 去空格
+                String name = req.getParameter("name");
+                teacher.setName(name != null ? name.trim() : "");
+
+                // 性别：判空 + 去空格
+                String gender = req.getParameter("gender");
+                teacher.setGender(gender != null ? gender.trim() : "");
+
+                // 手机号：判空 + 去空格
+                String phone = req.getParameter("phone");
+                teacher.setPhone(phone != null ? phone.trim() : "");
+
+                // 班级ID 允许为空
+                String classIdStr = req.getParameter("classId");
+                if (classIdStr == null || classIdStr.trim().isEmpty()) {
+                        teacher.setClassId(null); // 空 → 设为 null，存入数据库 NULL
+                } else {
+                        try {
+                                teacher.setClassId(Integer.parseInt(classIdStr.trim()));
+                        } catch (NumberFormatException e) {
+                                throw new BusinessesException(400, "班级ID必须是数字");
+                        }
+                }
+
+                return teacher;
+        }
+
+        private void setCors(HttpServletResponse resp) {
+                resp.setHeader("Access-Control-Allow-Origin", "*");
+                resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+                resp.setHeader("Access-Control-Allow-Headers", "Content-Type, token");
+                resp.setHeader("Access-Control-Max-Age", "3600");
+        }
 }

@@ -1,7 +1,6 @@
 package org.example.dao;
 
 import org.example.entity.Student;
-import org.example.utils.DBUtils;
 import org.example.utils.DaoUtils;
 
 import java.sql.Connection;
@@ -328,6 +327,57 @@ public class StudentDAO {
 
         } catch (Exception e) {
 
+            throw new RuntimeException(e);
+        }
+
+        return list;
+    }
+
+    public List<Student> searchByClassId(Connection conn, String keyword, Integer classId) {
+        List<Student> list =
+                new ArrayList<>();
+
+        String sql = "SELECT " +
+                "s.*, " +
+                "c.className, " +
+                "c.major, " +
+                "c.college " +
+                "FROM student s " +
+                "LEFT JOIN class_info c ON s.classId = c.classId " +
+                "WHERE s.classId=? AND (" +
+                "CAST(s.studentId AS CHAR) LIKE ? " +
+                "OR s.name LIKE ? " +
+                "OR s.gender LIKE ? " +
+                "OR CAST(s.age AS CHAR) LIKE ? " +
+                "OR s.phone LIKE ? " +
+                "OR CAST(s.classId AS CHAR) LIKE ? " +
+                "OR c.college LIKE ? " +
+                "OR c.major LIKE ?)";
+
+        try (
+                PreparedStatement ps =
+                        conn.prepareStatement(sql)
+        ) {
+            String value = "%" + keyword + "%";
+            ps.setInt(1, classId);
+            for (int i = 2; i <= 9; i++) {
+                ps.setString(i, value);
+            }
+
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
+                while (rs.next()) {
+                    list.add(
+                            DaoUtils.resultSetToObject(
+                                    rs,
+                                    Student.class
+                            )
+                    );
+                }
+            }
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 

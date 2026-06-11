@@ -101,20 +101,26 @@ public class UserServlet extends HttpServlet {
         return userService.login(user);
     }
 
-    private User buildUser(
-            HttpServletRequest req) {
-
+    private User buildUser(HttpServletRequest req) {
         User user = new User();
 
-        user.setUserId(
-                Long.parseLong(
-                        req.getParameter("userId")
-                )
-        );
+        // 用户ID 严格校验
+        String userIdStr = req.getParameter("userId");
+        if (userIdStr == null || userIdStr.trim().isEmpty()) {
+            throw new BusinessesException(400, "用户ID不能为空");
+        }
+        try {
+            user.setUserId(Long.parseLong(userIdStr.trim()));
+        } catch (NumberFormatException e) {
+            throw new BusinessesException(400, "用户ID必须是数字");
+        }
 
-        user.setPassword(
-                req.getParameter("password")
-        );
+        // 密码 严格校验
+        String password = req.getParameter("password");
+        if (password == null || password.trim().isEmpty()) {
+            throw new BusinessesException(400, "密码不能为空");
+        }
+        user.setPassword(password.trim());
 
         return user;
     }

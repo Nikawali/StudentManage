@@ -95,7 +95,7 @@ public class ClassInfo {
         if(college==null||college.trim().isEmpty()){
             throw new BusinessesException(400,"学院不能为空");
         }
-        this.college=college;
+        this.college=college.trim();
     }
 
     public String getMajor(){
@@ -106,7 +106,7 @@ public class ClassInfo {
         if(major==null||major.trim().isEmpty()){
             throw new BusinessesException(400,"专业不能为空");
         }
-        this.major=major;
+        this.major=major.trim();
     }
 
     @Override

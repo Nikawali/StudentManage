@@ -9,5 +9,7 @@ public interface UserService {
 
     LoginResult<?> login(User user);
 
+    boolean deleteUser(Long userId,String token);
+
     /*Result<Boolean> logout(Long userId);*/
 }

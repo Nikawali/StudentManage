@@ -101,7 +101,7 @@ public class Student {
     }
 
     public void setClassId(Integer classId) {
-        if (classId != null && classId <= 0) {
+        if (classId == null || classId <= 0) {
             throw new BusinessesException(400, "班级ID必须大于0");
         }
         this.classId = classId;

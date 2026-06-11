@@ -68,10 +68,7 @@ public class ClassInfoServlet extends HttpServlet {
             HttpServletRequest req,
             HttpServletResponse resp)
             throws ServletException, IOException {
-        resp.setHeader("Access-Control-Allow-Origin", "*");           // 允许所有来源（开发阶段）
-        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        resp.setHeader("Access-Control-Max-Age", "3600");
+        setCors(resp);
         String action =
                 req.getParameter("action");
 
@@ -107,10 +104,7 @@ public class ClassInfoServlet extends HttpServlet {
             HttpServletRequest req,
             HttpServletResponse resp)
             throws ServletException, IOException {
-        resp.setHeader("Access-Control-Allow-Origin", "*");           // 允许所有来源（开发阶段）
-        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        resp.setHeader("Access-Control-Max-Age", "3600");
+        setCors(resp);
         req.setCharacterEncoding("UTF-8");
 
         String action =
@@ -223,30 +217,48 @@ public class ClassInfoServlet extends HttpServlet {
     }
 
 
-    private ClassInfo buildClassInfo(
-            HttpServletRequest req) {
+    private ClassInfo buildClassInfo(HttpServletRequest req) {
+        ClassInfo classInfo = new ClassInfo();
 
-        ClassInfo classInfo =
-                new ClassInfo();
+        // 班级名称 校验：不能为空
+        String className = req.getParameter("className");
+        if (className == null || className.trim().isEmpty()) {
+            throw new BusinessesException(400, "班级名称不能为空");
+        }
+        classInfo.setClassName(className.trim());
 
-        classInfo.setClassName(
-                req.getParameter("className")
-        );
+        String college = req.getParameter("college");
+        if (college == null || college.trim().isEmpty()) {
+            throw new BusinessesException(400, "学院不能为空");
+        }
+        classInfo.setCollege(college.trim());
 
-        String teacherId =
-                req.getParameter("teacherId");
+        String major = req.getParameter("major");
+        if (major == null || major.trim().isEmpty()) {
+            throw new BusinessesException(400, "专业不能为空");
+        }
+        classInfo.setMajor(major.trim());
 
-        if (teacherId != null
-                && !teacherId.isEmpty()) {
-
-            classInfo.setTeacherId(
-                    Long.parseLong(
-                            teacherId
-                    )
-            );
+        // 教师ID 校验：允许为空；不为空则必须为数字
+        String teacherId = req.getParameter("teacherId");
+        if (teacherId == null || teacherId.trim().isEmpty()) {
+            classInfo.setTeacherId(null);
+        } else {
+            try {
+                classInfo.setTeacherId(Long.parseLong(teacherId.trim()));
+            } catch (NumberFormatException e) {
+                throw new BusinessesException(400, "教师ID必须是数字");
+            }
         }
 
         return classInfo;
+    }
+
+    private void setCors(HttpServletResponse resp) {
+        resp.setHeader("Access-Control-Allow-Origin", "*");
+        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        resp.setHeader("Access-Control-Allow-Headers", "Content-Type, token");
+        resp.setHeader("Access-Control-Max-Age", "3600");
     }
     
 }

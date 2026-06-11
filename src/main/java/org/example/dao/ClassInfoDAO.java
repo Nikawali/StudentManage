@@ -15,7 +15,7 @@ public class ClassInfoDAO {
 
 
     public boolean insert(Connection conn, ClassInfo classInfo) {
-        String sql = "insert into class_info " + "(className,teacherId) " + "values " + "(#{className},#{teacherId})";
+        String sql = "insert into class_info " + "(className,college,major,teacherId) " + "values " + "(#{className},#{college},#{major},#{teacherId})";
         try (PreparedStatement ps = conn.prepareStatement(DaoUtils.parseSql(sql), Statement.RETURN_GENERATED_KEYS)) {
             DaoUtils.objectToPreparedStatement(classInfo, ps, DaoUtils.getFieldNames(sql).toArray(new String[0]));
             int rows = ps.executeUpdate();
@@ -37,6 +37,8 @@ public class ClassInfoDAO {
             String sql =
                     "update class_info set " +
                             "className=#{className}," +
+                            "college=#{college}," +
+                            "major=#{major}," +
                             "teacherId=#{teacherId} " +
                             "WHERE classId=#{classId}";
 
@@ -132,6 +134,8 @@ public class ClassInfoDAO {
                     "SELECT\n" +
                             "    c.classId,\n" +
                             "    c.className,\n" +
+                            "    c.college,\n" +
+                            "    c.major,\n" +
                             "    c.teacherId,\n" +
                             "    t.name teacherName,\n" +
                             "    COUNT(s.studentId) studentCount\n" +
@@ -143,6 +147,8 @@ public class ClassInfoDAO {
                             "GROUP BY\n" +
                             "    c.classId,\n" +
                             "    c.className,\n" +
+                            "    c.college,\n" +
+                            "    c.major,\n" +
                             "    c.teacherId,\n" +
                             "    t.name";
 
