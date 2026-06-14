@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>学生主页</title>
+
+<link rel="stylesheet"
+      href="home.css">
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+<div class="header">
+
+    <h1>学生主页</h1>
+
+    <button
+            id="logoutBtn"
+            class="btn danger">
+
+        退出登录
+
+    </button>
+
+</div>
+
+<div class="card">
+
+    <h2>个人信息</h2>
+
+    <p>
+        学号：
+        <span id="studentId">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        姓名：
+        <span id="studentName">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        性别：
+        <span id="studentGender">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        年龄：
+        <span id="studentAge">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        手机号：
+        <span id="studentPhone">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        学院：
+        <span id="studentCollege">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        专业：
+        <span id="studentMajor">
+            加载中...
+        </span>
+    </p>
+
+</div>
+
+<div class="card">
+
+
+</div>
+
+
+</div>
+
+<script>
+    const BASE_URL =
+"http://localhost:8080/test5_war_exploded/student";
+
+function authFetch(
+url,
+options = {}
+){
+
+
+options.headers = {
+
+    ...(options.headers || {}),
+
+    token:
+        localStorage.getItem(
+            "token"
+        )
+};
+
+return fetch(
+    url,
+    options
+);
+
+
+}
+
+window.onload = function(){
+
+
+loadStudentInfo();
+
+bindEvent();
+
+
+};
+
+function loadStudentInfo(){
+
+
+authFetch(
+    BASE_URL +
+    "?action=findById"
+)
+
+.then(
+    response =>
+        response.json()
+)
+
+.then(result => {
+
+    if(
+        result.code !== 200
+    ){
+
+        alert(
+            result.message
+        );
+
+        return;
+    }
+
+    const student =
+        result.data;
+
+    document.getElementById(
+        "studentId"
+    ).innerText =
+        student.studentId;
+
+    document.getElementById(
+        "studentName"
+    ).innerText =
+        student.name;
+
+    document.getElementById(
+        "studentGender"
+    ).innerText =
+        student.gender;
+
+    document.getElementById(
+        "studentAge"
+    ).innerText =
+        student.age;
+
+    document.getElementById(
+        "studentPhone"
+    ).innerText =
+        student.phone;
+
+    document.getElementById(
+        "studentCollege"
+    ).innerText =
+        student.college;
+
+    document.getElementById(
+        "studentMajor"
+    ).innerText =
+        student.major;
+})
+
+.catch(error => {
+
+    console.error(error);
+
+    alert(
+        "获取学生信息失败"
+    );
+});
+
+
+}
+
+function bindEvent(){
+
+
+document
+    .getElementById(
+        "logoutBtn"
+    )
+    .onclick = function(){
+
+        localStorage.clear();
+
+        location.href =
+            "login.html";
+    };
+
+
+}
+
+</script>
+
+</body>
+
+</html>

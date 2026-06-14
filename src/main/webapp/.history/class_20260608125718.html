@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>班级管理</title>
+
+<style>
+
+body{
+    font-family: Arial;
+    padding:20px;
+}
+
+table{
+    width:100%;
+    border-collapse: collapse;
+}
+
+th,td{
+    border:1px solid #ccc;
+    padding:10px;
+    text-align:center;
+}
+
+button{
+    padding:6px 12px;
+    cursor:pointer;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+    <h2>班级管理</h2>
+
+    <button onclick="addClass()">
+        新增班级
+    </button>
+
+</div>
+
+<table>
+
+    <thead>
+
+    <tr>
+
+        <th>班级ID</th>
+
+        <th>班级名称</th>
+
+        <th>教师ID</th>
+
+        <th>操作</th>
+
+    </tr>
+
+    </thead>
+
+    <tbody id="tbody">
+
+    </tbody>
+
+</table>
+
+<br>
+
+<button onclick="backHome()">
+    返回首页
+</button>
+
+<script>
+
+const BASE_URL =
+"http://localhost:8080/test5_war_exploded/class";
+
+function authFetch(
+    url,
+    options={}
+){
+
+    options.headers = {
+
+        ...(options.headers || {}),
+
+        token:
+            localStorage.getItem(
+                "token"
+            )
+    };
+
+    return fetch(
+        url,
+        options
+    );
+}
+
+window.onload =
+    loadClassList;
+
+async function loadClassList(){
+
+    const response =
+        await authFetch(
+            BASE_URL +
+            "?action=findAll"
+        );
+
+    const result =
+        await response.json();
+
+    if(result.code !== 200){
+
+        alert(result.message);
+
+        return;
+    }
+
+    const tbody =
+        document.getElementById(
+            "tbody"
+        );
+
+    tbody.innerHTML = "";
+
+    result.data.forEach(item => {
+
+        tbody.innerHTML +=
+        `
+        <tr>
+
+            <td>
+                ${item.id}
+            </td>
+
+            <td>
+                ${item.className}
+            </td>
+
+            <td>
+                ${item.teacherId}
+            </td>
+
+            <td>
+
+                <button
+                    onclick="deleteClass(${item.id})">
+
+                    删除
+
+                </button>
+
+            </td>
+
+        </tr>
+        `;
+    });
+}
+
+async function addClass(){
+
+    const className =
+        prompt(
+            "请输入班级名称"
+        );
+
+    if(
+        !className
+    ){
+        return;
+    }
+
+    const teacherId =
+        prompt(
+            "请输入教师ID"
+        );
+
+    if(
+        !teacherId
+    ){
+        return;
+    }
+
+    const params =
+        new URLSearchParams();
+
+    params.append(
+        "action",
+        "add"
+    );
+
+    params.append(
+        "className",
+        className
+    );
+
+    params.append(
+        "teacherId",
+        teacherId
+    );
+
+    const response =
+        await authFetch(
+            BASE_URL,
+            {
+                method:"POST",
+                body:params
+            }
+        );
+
+    const result =
+        await response.json();
+
+    alert(
+        result.message
+    );
+
+    if(
+        result.code === 200
+    ){
+        loadClassList();
+    }
+}
+
+async function deleteClass(id){
+
+    if(
+        !confirm(
+            "确定删除该班级？"
+        )
+    ){
+        return;
+    }
+
+    const params =
+        new URLSearchParams();
+
+    params.append(
+        "action",
+        "delete"
+    );
+
+    params.append(
+        "id",
+        id
+    );
+
+    const response =
+        await authFetch(
+            BASE_URL,
+            {
+                method:"POST",
+                body:params
+            }
+        );
+
+    const result =
+        await response.json();
+
+    alert(
+        result.message
+    );
+
+    if(
+        result.code === 200
+    ){
+        loadClassList();
+    }
+}
+
+function backHome(){
+
+    location.href =
+        "home.html";
+}
+
+</script>
+
+</body>
+
+</html>

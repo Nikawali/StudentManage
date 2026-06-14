@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>教师工作台</title>
+
+<link rel="stylesheet"
+      href="home.css">
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+<div class="header">
+
+    <h1>教师工作台</h1>
+
+    <button
+            id="logoutBtn"
+            class="btn danger">
+
+        退出登录
+
+    </button>
+
+</div>
+
+<div class="card">
+
+    <h2>教师信息</h2>
+
+    <p>
+        工号：
+        <span id="teacherId">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        姓名：
+        <span id="teacherName">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        学院：
+        <span id="teacherCollege">
+            加载中...
+        </span>
+    </p>
+
+</div>
+
+<div class="card">
+
+    <h2>功能中心</h2>
+
+    <div class="btn-group">
+
+        <button
+                id="studentManageBtn"
+                class="btn primary">
+
+            学生管理
+
+        </button>
+
+        <button
+                id="passwordBtn"
+                class="btn">
+
+            修改密码
+
+        </button>
+
+    </div>
+
+</div>
+
+
+</div>
+
+<script>
+    const BASE_URL =
+"http://localhost:8080/test5_war_exploded/teacher";
+
+function authFetch(
+url,
+options = {}
+){
+
+
+options.headers = {
+
+    ...(options.headers || {}),
+
+    token:
+        localStorage.getItem(
+            "token"
+        )
+};
+
+return fetch(
+    url,
+    options
+);
+
+
+}
+
+window.onload = function(){
+
+
+loadTeacherInfo();
+
+bindEvent();
+
+
+};
+
+function loadTeacherInfo(){
+
+
+authFetch(
+    BASE_URL +
+    "?action=findById"
+)
+
+.then(
+    response =>
+        response.json()
+)
+
+.then(result => {
+
+    if(
+        result.code !== 200
+    ){
+
+        alert(
+            result.message
+        );
+
+        return;
+    }
+
+    const teacher =
+        result.data;
+
+    document.getElementById(
+        "teacherId"
+    ).innerText =
+        teacher.userId;
+
+    document.getElementById(
+        "teacherName"
+    ).innerText =
+        teacher.name;
+
+    document.getElementById(
+        "teacherCollege"
+    ).innerText =
+        teacher.college;
+})
+
+.catch(error => {
+
+    console.error(error);
+
+    alert(
+        "获取教师信息失败"
+    );
+});
+
+
+}
+
+function bindEvent(){
+
+
+document
+    .getElementById(
+        "studentManageBtn"
+    )
+    .onclick = function(){
+
+        location.href =
+            "index.html";
+    };
+
+document
+    .getElementById(
+        "logoutBtn"
+    )
+    .onclick = function(){
+
+        localStorage.clear();
+
+        location.href =
+            "login.html";
+    };
+
+
+}
+
+</script>
+
+</body>
+
+</html>

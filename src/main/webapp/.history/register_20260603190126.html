@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>注册</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+  <script src="js.js"></script>
+</head>
+
+<body>
+  <div class="register-container">
+    <a href="login.html" class="return">
+      < </a>
+        <h1>手机快速注册</h1>
+        <form id="registerForm">
+          <!-- 手机号 -->
+          <div class="input-box">
+            <input type="tel" id="regPhone" placeholder=" " required name="phone">
+            <label>手机号</label>
+            <button type="button" class="get-code" id="getRegCode" onclick="getCode()">获取验证码</button>
+          </div>
+          <!-- 验证码 -->
+          <div class="input-box">
+            <input type="text" id="regCode" placeholder=" " required name="captcha">
+            <label>验证码</label>
+          </div>
+          <div class="input-box">
+            <input type="text" id="regId" placeholder=" " required name="userId">
+            <label>学号</label>
+          </div>
+          <div class="input-box">
+            <input type="text" id="name" placeholder=" " required name="userName">
+            <label>昵称</label>
+          </div>
+          <div class="input-box">
+            <input type="password" id="regPwd" placeholder=" " required name="password">
+            <label>设置密码</label>
+          </div>
+          <div class="input-box">
+            <input type="password" id="confirmPwd" placeholder=" " required>
+            <label>确认密码</label>
+          </div>
+
+          <button type="submit" class="btn">注册</button>
+
+
+        </form>
+  </div>
+
+  <script>
+
+    async function getCode() {
+      const phone = document.getElementById('regPhone').value;
+      const response = await fetch(`http://localhost:8080/createCaptcha?phone=${encodeURIComponent(phone)}`, {
+        method: 'GET',
+      });
+      const data = await response.json();
+      alert(data);
+    }
+
+    // 倒计时
+    document.getElementById('getRegCode').addEventListener('click', function () {
+      const phone = document.getElementById('regPhone').value;
+      if (!phone) return alert('请先输入手机号');
+      let t = 60;
+      this.disabled = true;
+      this.textContent = `重新获取(${t}s)`;
+      const timer = setInterval(() => {
+        t--;
+        this.textContent = `重新获取(${t}s)`;
+        if (t <= 0) {
+          clearInterval(timer);
+          this.disabled = false;
+          this.textContent = '获取验证码';
+        }
+      }, 1000);
+    });
+
+
+    // 注册提交
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pwd = document.getElementById('regPwd').value;
+      const confirm = document.getElementById('confirmPwd').value;
+      if (pwd !== confirm) {
+        alert('两次输入的密码不一致');
+        return;
+      }
+      const form = document.getElementById('registerForm');
+      const formData = new FormData(form);
+      const password = formData.get('password');
+      const hashPassword = CryptoJS.SHA256(password).toString();
+      formData.set('password', hashPassword);
+      const jsonData = Object.fromEntries(formData.entries())
+      const response = await fetch('http://localhost:8080/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type':
+            'application/json'
+        },
+        body: JSON.stringify(jsonData)
+      });
+          const data = await response.json();
+      console.log(data);
+        if (data.code === 200) {
+        showTempTip(data.message, "green");
+        setTimeout(() => {
+          window.location.href = "login.html";
+        },500);
+      }
+      else {
+        showTempTip(data.message, "red");
+      }
+    });
+  </script>
+</body>
+</html>

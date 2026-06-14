@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生管理系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1 class="system-title" id="pageTitle">
+            学生管理系统
+        </h1>
+
+        <div class="btn-group">
+
+            <button class="btn add-btn">
+                新增
+            </button>
+
+            <button class="btn delete-btn">
+                删除
+            </button>
+
+            <button class="btn search-btn">
+                查询
+            </button>
+
+        </div>
+
+        <div class="table-wrapper">
+
+            <table class="student-table">
+
+                <thead>
+
+                    <tr>
+
+                        <!-- 全选框 -->
+                        <th>
+                            <input type="checkbox" id="selectAll">
+                        </th>
+
+                        <th>学号</th>
+                        <th>姓名</th>
+                        <th>性别</th>
+                        <th>年龄</th>
+                        <th>手机号</th>
+                        <th>班级ID</th>
+                        <th>学院</th>
+                        <th>专业</th>
+                        <th>操作</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="studentBody">
+
+                    <!-- JS动态生成 -->
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="pagination">
+
+            <div class="page-info" id="pageInfo">
+                学生列表
+            </div>
+
+            <div class="page-btn-group">
+
+                <!-- <button class="btn page-btn">
+                    上一页
+                </button>
+
+                <button class="btn page-btn">
+                    下一页 -->
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

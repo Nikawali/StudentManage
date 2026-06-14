@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>班级管理</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    background:#f5f7fa;
+
+    font-family:
+            "Microsoft YaHei";
+
+    padding:30px;
+}
+
+.container{
+
+    max-width:1200px;
+
+    margin:auto;
+}
+
+.header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+}
+
+.title{
+
+    font-size:28px;
+
+    font-weight:bold;
+
+    color:#303133;
+}
+
+.card{
+
+    background:white;
+
+    border-radius:12px;
+
+    box-shadow:
+            0 4px 12px
+            rgba(0,0,0,.08);
+
+    padding:20px;
+
+    margin-bottom:20px;
+}
+
+.card h3{
+
+    margin-bottom:15px;
+
+    color:#303133;
+}
+
+.form-row{
+
+    display:flex;
+
+    gap:15px;
+
+    flex-wrap:wrap;
+}
+
+.form-row input{
+
+    flex:1;
+
+    min-width:200px;
+
+    padding:10px;
+
+    border:1px solid #dcdfe6;
+
+    border-radius:6px;
+
+    outline:none;
+}
+
+.form-row input:focus{
+
+    border-color:#409eff;
+}
+
+.btn{
+
+    border:none;
+
+    color:white;
+
+    cursor:pointer;
+
+    padding:10px 18px;
+
+    border-radius:6px;
+
+    transition:.3s;
+}
+
+.btn-add{
+
+    background:#409eff;
+}
+
+.btn-add:hover{
+
+    background:#66b1ff;
+
+    transform:
+            translateY(-2px);
+}
+
+.btn-view{
+
+    background:#67c23a;
+}
+
+.btn-view:hover{
+
+    background:#85ce61;
+}
+
+.btn-edit{
+
+    background:#e6a23c;
+}
+
+.btn-edit:hover{
+
+    background:#ebb563;
+}
+
+.btn-delete{
+
+    background:#f56c6c;
+}
+
+.btn-delete:hover{
+
+    background:#f78989;
+}
+
+.btn-back{
+
+    background:#909399;
+}
+
+.btn-back:hover{
+
+    background:#a6a9ad;
+}
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+}
+
+th{
+
+    background:#409eff;
+
+    color:white;
+}
+
+th,
+td{
+
+    border:1px solid #ebeef5;
+
+    padding:12px;
+
+    text-align:center;
+}
+
+tbody tr{
+
+    transition:.3s;
+}
+
+tbody tr:hover{
+
+    background:#f5f7fa;
+}
+
+.action-btn{
+
+    margin:0 3px;
+}
+
+.footer{
+
+    margin-top:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <div class="title">
+            班级管理
+        </div>
+
+    </div>
+
+    <!-- 新增班级 -->
+
+    <div class="card">
+
+        <h3>新增班级</h3>
+
+        <div class="form-row">
+
+            <input
+                    id="className"
+                    placeholder="请输入班级名称">
+
+            <input
+                    id="teacherId"
+                    placeholder="请输入教师ID">
+
+            <button
+                    class="btn btn-add"
+                    onclick="addClass()">
+
+                新增班级
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- 班级列表 -->
+
+    <div class="card">
+
+        <h3>班级列表</h3>
+
+        <table>
+
+            <thead>
+
+            <tr>
+
+    <th>班级ID</th>
+
+    <th>班级名称</th>
+
+    <th>教师ID</th>
+
+    <th>学生人数</th>
+
+    <th>操作</th>
+
+</tr>
+
+            </thead>
+
+            <tbody id="tbody">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <div class="footer">
+
+        <button
+                class="btn btn-back"
+                onclick="backHome()">
+
+            返回首页
+
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+const BASE_URL =
+"http://localhost:8080/test5_war_exploded/class";
+
+function authFetch(
+        url,
+        options={}
+){
+
+    options.headers = {
+
+        ...(options.headers || {}),
+
+        token:
+            localStorage.getItem(
+                "token"
+            )
+    };
+
+    return fetch(
+        url,
+        options
+    );
+}
+
+window.onload =
+        loadClassList;
+
+async function loadClassList(){
+
+    const response =
+            await authFetch(
+                    BASE_URL +
+                    "?action=findAll"
+            );
+
+    const result =
+            await response.json();
+            console.log(result);
+
+    if(result.code !== 200){
+
+        alert(result.message);
+
+        return;
+    }
+
+    const tbody =
+            document.getElementById(
+                    "tbody"
+            );
+
+    tbody.innerHTML = "";
+
+    result.data.forEach(item=>{
+
+   tbody.innerHTML +=
+`
+<tr>
+
+    <td>
+        ${item.id}
+    </td>
+
+    <td>
+        ${item.className}
+    </td>
+
+    <td>
+        ${item.teacherId || "未分配"}
+    </td>
+
+    <td>
+        ${item.studentCount}
+    </td>
+
+    <td>
+
+        <button
+            class="btn btn-view action-btn"
+            onclick="viewClass(
+                ${item.id},
+                '${item.className}',
+                '${item.teacherId}',
+                '${item.studentCount}'
+            )">
+
+            查看
+        
+
+        </button>
+
+        <button
+            class="btn btn-edit action-btn"
+            onclick="editClass(
+                ${item.id},
+                '${item.className}',
+                '${item.teacherId}'
+            )">
+
+            修改
+
+        </button>
+
+        <button
+            class="btn btn-delete action-btn"
+            onclick="deleteClass(
+                ${item.id}
+            )">
+
+            删除
+
+        </button>
+
+    </td>
+
+</tr>
+`;
+    });
+}
+
+async function addClass(){
+
+    const className =
+            document
+                    .getElementById(
+                            "className"
+                    )
+                    .value
+                    .trim();
+
+    const teacherId =
+            document
+                    .getElementById(
+                            "teacherId"
+                    )
+                    .value
+                    .trim();
+
+    if(!className){
+
+        alert("请输入班级名称");
+
+        return;
+    }
+
+    const params =
+            new URLSearchParams();
+
+    params.append(
+            "action",
+            "add"
+    );
+
+    params.append(
+            "className",
+            className
+    );
+
+    params.append(
+            "teacherId",
+            teacherId
+    );
+
+    const response =
+            await authFetch(
+                    BASE_URL,
+                    {
+                        method:"POST",
+                        body:params
+                    }
+            );
+
+    const result =
+            await response.json();
+
+    alert(result.message);
+
+    if(result.code === 200){
+
+        document
+                .getElementById(
+                        "className"
+                ).value = "";
+
+        document
+                .getElementById(
+                        "teacherId"
+                ).value = "";
+
+        loadClassList();
+    }
+}
+
+// 查看班级 → 跳转到 index.html 页面
+function viewClass(id, className, teacherId) {
+    
+    location.href = `index.html?classId=${id}`;
+}
+
+async function editClass(
+        id,
+        oldName,
+        oldTeacherId
+){
+
+    const className =
+            prompt(
+                    "修改班级名称",
+                    oldName
+            );
+
+    if(className == null){
+
+        return;
+    }
+
+    const teacherId =
+            prompt(
+                    "修改教师ID",
+                    oldTeacherId
+            );
+
+    if(teacherId == null){
+
+        return;
+    }
+
+    const params =
+            new URLSearchParams();
+
+    params.append(
+            "action",
+            "update"
+    );
+
+    params.append(
+            "id",
+            id
+    );
+
+    params.append(
+            "className",
+            className
+    );
+
+    params.append(
+            "teacherId",
+            teacherId
+    );
+
+    const response =
+            await authFetch(
+                    BASE_URL,
+                    {
+                        method:"POST",
+                        body:params
+                    }
+            );
+
+    const result =
+            await response.json();
+
+    alert(result.message);
+
+    if(result.code === 200){
+
+        loadClassList();
+    }
+}
+
+async function deleteClass(id){
+
+    if(
+        !confirm(
+            "确定删除该班级？"
+        )
+    ){
+        return;
+    }
+
+    const params =
+            new URLSearchParams();
+
+    params.append(
+            "action",
+            "delete"
+    );
+
+    params.append(
+            "id",
+            id
+    );
+
+    const response =
+            await authFetch(
+                    BASE_URL,
+                    {
+                        method:"POST",
+                        body:params
+                    }
+            );
+
+    const result =
+            await response.json();
+
+    alert(
+            result.message
+    );
+
+    if(result.code === 200){
+
+        loadClassList();
+    }
+}
+
+function backHome(){
+
+    location.href =
+            "home.html";
+}
+
+</script>
+
+</body>
+
+</html>

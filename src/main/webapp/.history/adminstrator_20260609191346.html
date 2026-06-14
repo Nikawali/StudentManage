@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>管理员工作台</title>
+
+<link rel="stylesheet"
+      href="home.css">
+
+
+</head>
+
+<body>
+
+<div class="container">
+
+
+<div class="header">
+
+    <h1>管理员工作台</h1>
+
+    <button
+            id="logoutBtn"
+            class="btn danger">
+
+        退出登录
+
+    </button>
+
+</div>
+
+<div class="card">
+
+    <h2>管理员信息</h2>
+
+    <p>
+        工号：
+        <span id="teacherId">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        姓名：
+        <span id="teacherName">
+            加载中...
+        </span>
+    </p>
+
+       <p>
+        性别：
+        <span id="gender">
+            加载中...
+        </span>
+    </p>
+
+    <p>
+        班级：
+        <span id="teacherClassId">
+            加载中...
+        </span>
+    </p>
+
+        <p>
+        手机号：
+        <span id="phone">
+            加载中...
+        </span>
+    </p>
+
+
+</div>
+
+<div class="card">
+
+    <h2>功能中心</h2>
+
+<div class="btn-group">
+
+    <button
+            id="studentManageBtn"
+            class="btn primary">
+
+        学生管理
+
+    </button>
+
+    <button
+            id="classManageBtn"
+            class="btn primary">
+
+        班级管理
+
+    </button>
+
+    <button
+            id="editTeacherBtn"
+            class="btn primary">
+
+        修改信息
+
+    </button>
+
+</div>
+
+</div>
+
+
+</div>
+
+<script>
+    const BASE_URL =
+"http://localhost:8080/test5_war_exploded/teacher";
+
+function authFetch(
+url,
+options = {}
+){
+
+
+options.headers = {
+
+    ...(options.headers || {}),
+
+    token:
+        localStorage.getItem(
+            "token"
+        )
+};
+
+return fetch(
+    url,
+    options
+);
+
+
+}
+
+window.onload = function(){
+
+
+loadTeacherInfo();
+
+bindEvent();
+
+
+};
+
+function loadTeacherInfo(){
+
+
+authFetch(
+    BASE_URL +
+    "?action=findById"
+)
+
+.then(
+    response =>
+        response.json()
+)
+
+.then(result => {
+
+    if(
+        result.code !== 200
+    ){
+
+        alert(
+            result.message
+        );
+
+        return;
+    }
+
+    const teacher =
+        result.data;
+        console.log(teacher);
+
+    document.getElementById(
+        "teacherId"
+    ).innerText =
+        teacher.teacherId;
+
+    document.getElementById(
+        "teacherName"
+    ).innerText =
+        teacher.name;
+
+    document.getElementById(
+        "teacherClassId"
+    ).innerText =
+        teacher.classId;
+    document.getElementById(
+       "phone"
+    ).innerText =
+        teacher.phone;
+    document.getElementById(
+       "gender"
+    ).innerText =
+        teacher.gender;
+})
+
+.catch(error => {
+
+    console.error(error);
+
+    alert(
+        "获取管理员信息失败"
+    );
+});
+
+
+}
+
+function bindEvent(){
+
+
+document
+    .getElementById(
+        "studentManageBtn"
+    )
+    .onclick = function(){
+
+        location.href =
+            "index.html";
+    };
+
+document
+    .getElementById(
+        "logoutBtn"
+    )
+    .onclick = function(){
+
+        localStorage.clear();
+
+        location.href =
+            "login.html";
+    };
+
+    document
+    .getElementById(
+        "classManageBtn"
+    )
+    .onclick = function(){
+
+        location.href =
+            "class.html";
+    };
+
+document.getElementById("editTeacherBtn").onclick = async function () {
+    const response = await authFetch(BASE_URL + "?action=findById");
+    const result = await response.json();
+
+    if (result.code !== 200) {
+        alert(result.message);
+        return;
+    }
+
+    const teacher = result.data;
+
+    // 2. 弹窗输入（参考你的学生编辑风格）
+    const name = prompt("请输入姓名", teacher.name);
+    if (name === null || name === "") return;
+
+    const gender = prompt("请输入性别", teacher.gender);
+    if (gender === null || gender === "") return;
+
+    const phone = prompt("请输入手机号", teacher.phone);
+    if (phone === null || phone === "") return;
+
+    const classId = prompt("请输入班级ID", teacher.classId);
+    if (classId === null) return;
+
+    const params = new URLSearchParams();
+    params.append("action", "update");
+    params.append("name", name);
+    params.append("gender", gender);
+    params.append("phone", phone);
+    params.append("classId", classId);
+
+    // 4. 提交更新
+    const updateResponse = await authFetch(BASE_URL, {
+        method: "POST",
+        body: params
+    });
+
+    const updateResult = await updateResponse.json();
+    alert(updateResult.message);
+
+    if (updateResult.code === 200) {
+        loadTeacherInfo();
+    }
+};
+}
+
+</script>
+
+</body>
+
+</html>
